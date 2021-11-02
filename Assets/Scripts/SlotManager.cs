@@ -55,14 +55,30 @@ public class SlotManager : MonoBehaviour
     }
     void FixedUpdate(){
        
+       //Check if you are supposed to be moving tiles;
        if(!readyToCheck && playGame){
-           //basically just count of how many there are - 1 adjusted because the first item is zero
+           moveTiles();
+        }
+        //Check if you have tiles are all in place
+        if(readyToCheck && playGame){
+            highlightTiles();
+            
+           //destoryTiles();
+        }
+    }
+    //Code that moves tiles at the start of the game!
+    public void moveTiles(){
+        
+            
+           //count of how many tiles are in each row.
            int _lastRowTile = slotScreen.Count - 1;
 
             
-           //Cycle through all the items in the entire list (which is basically just the list count * list count).
+           //Cycle through all 8 items of that row.
            for (int c = 0; c < slotScreen.Count; c++)
             {
+                //Check if all tiles are in their correct positions --> once ready set "readyToCheck" to true.
+                
                 //Check if all the top row items are below 4 in the y 
                 if(slotScreen[colCount][_lastRowTile].slotGameObject.transform.position.y <= 4 ){
                             //add one to colCount to increase what col youre moving
@@ -91,26 +107,32 @@ public class SlotManager : MonoBehaviour
                     
                      
             }
-        }
-        if(readyToCheck && playGame){
+    }
+    //Highlight tiles when you have a bigger then 5 cluster! && checks if there are clusters big enough
+    public void highlightTiles(){
+        
             for (int i = 0; i < 8; i++)
             {
                 for (int c = 0; c < 8; c++)
                 {
+                    //set to 0 so when you find a identical tile in the cluster you can keep track of how many.
                     tileCount = 0;
                     //if you havent checked the tile yet do this..
                     if(!slotScreen[i][c].tileChecked){
                         checkTile(i,c, slotScreen[i][c].slotImageTag);
                     }
-                    
-                    //Debug.Log(tileCount);
+                    //Check if big enough cluster!
                     //if there was enough tiles in that cluster... recycle through those tiles and collect them.
                     if(tileCount >=  5){
+                        //Highlight the tiles that are in a large enough cluster + tag them special.
                         changeTiles(i,c, slotScreen[i][c].slotImageTag);
                     }
                 }
             }
-            //DESTROY ITEMS AND MOVE THE ITEMS DOWN AND REPOPULATE GAME.. DOESNT QUITE WORK ATM
+    }
+    //Destroy any clusters that are large enough + add new tiles to replace..
+    public void destoryTiles(){
+         //DESTROY ITEMS AND MOVE THE ITEMS DOWN AND REPOPULATE GAME.. DOESNT QUITE WORK ATM
             for (int i = 0; i < 8; i++)
             {
                 for (int c = 0; c < 8; c++)
@@ -120,11 +142,11 @@ public class SlotManager : MonoBehaviour
                     }
                     if(slotScreen[i][c].tileCounted){
                         Destroy(slotScreen[i][c].slotGameObject);
-                        slotScreen[i].RemoveAt(c);
+                        //slotScreen[i].RemoveAt(c);
                         Debug.Log(slotScreen[i].Count);
-                        slotClassObj objTest;
-                        objTest = new slotClassObj(Instantiate(slotObjPrefab));
-                        slotScreen[i].Add(objTest);
+                        //slotClassObj objTest;
+                        //objTest = new slotClassObj(Instantiate(slotObjPrefab));
+                        //slotScreen[i].Add(objTest);
                         //randomizeGameobjects(i,c);
                         //slotScreen[i][slotScreen[i].Count-1].slotGameObject.transform.position = new Vector3(i - 2,slotScreen[i].Count-1 + 5,0);
                         
@@ -135,13 +157,13 @@ public class SlotManager : MonoBehaviour
             playGame = false;
             //readyToCheck = false;
             //colCount = 0;
-        }
     }
+    
 
     //When you press the start button on the screen
     public void StartButton(){
         
-        for (int i = 0; i < 8; i++)
+       /* for (int i = 0; i < 8; i++)
         {
             for (int c = 0; c < 8; c++)
             {
@@ -153,9 +175,10 @@ public class SlotManager : MonoBehaviour
         
         readyToCheck = false;
         colCount = 0;
+        */
+        destoryTiles();
         
         
-
         
         //objTest.slotGameObject.transform.position = new Vector3(0,0 + i++,0);
     }
