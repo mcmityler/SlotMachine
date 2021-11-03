@@ -94,8 +94,10 @@ public class SlotManagerV2 : MonoBehaviour
 
 
         //reset name of object just for testing purposes.
-        //slotScreen[i][c].slotGameObject.name = (i.ToString()+c.ToString());
-       
+        slotScreen[i][c].slotGameObject.name = (i.ToString()+c.ToString());
+        slotScreen[i][c].tileChecked = false;
+        slotScreen[i][c].tileCounted = false;
+        slotScreen[i][c].slotGameObject.GetComponent<SpriteRenderer>().color = Color.white;
     }
     
 
@@ -201,6 +203,7 @@ public class SlotManagerV2 : MonoBehaviour
     }
     public void DropButton(){
         droppingTiles = true;
+        RandomizeAll();
     }
     public void HighlightButton(){
         HighlightTiles();
@@ -256,9 +259,9 @@ public class SlotManagerV2 : MonoBehaviour
             //Rotate through 8x8 grid.
             for (int i = 0; i < 8; i++)
             {
-                for (int c = 0; c < 8; c++)
+                for (int c = 0; c < slotScreen[i].Count; c++)
                 {
-                    if(slotScreen[i][c].slotGameObject.transform.position.y > (c-4.0f)){
+                    if(slotScreen[i][c].slotGameObject.transform.position.y >= (c-4.0f)){
                         slotScreen[i][c].slotGameObject.transform.position =  slotScreen[i][c].slotGameObject.transform.position  + new Vector3(0,-slotMoveSpeed,0) * Time.deltaTime;
                         didMove = true;
                     }
@@ -266,6 +269,16 @@ public class SlotManagerV2 : MonoBehaviour
             } 
             if(didMove == false){
                 droppingTiles = false;
+            }
+    }
+
+    void RandomizeAll(){
+         for (int i = 0; i < 8; i++)
+            {
+                for (int c = 0; c < slotScreen[i].Count; c++)
+                {
+                    randomizeGameobjects(i,c);
+                }
             }
     }
     
