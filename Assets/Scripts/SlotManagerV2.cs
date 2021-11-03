@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 /*To do List
 1. spawn 8x8 grid of random symbols -- DONZO :) --
@@ -38,7 +39,7 @@ public class SlotManagerV2 : MonoBehaviour
 
     // --------------------------- FUNCTIONS ---------------------------------
     void Awake(){
-        
+        DisplayPCoins();
         //create 8x8 grid
         for (int i = 0; i < 8; i++)
         {
@@ -121,6 +122,7 @@ public class SlotManagerV2 : MonoBehaviour
                     if(tileCount >=  5){
                         //Highlight the tiles that are in a large enough cluster + tag them special.
                         changeTiles(i,c, slotScreen[i][c].slotImageTag);
+                        AddCoins(tileCount);
                     }
                 }
             }
@@ -203,10 +205,18 @@ public class SlotManagerV2 : MonoBehaviour
     }
     public void DropButton(){
         droppingTiles = true;
+    }
+     public void RanzomizeButton(){
         RandomizeAll();
+        playerCoins -= betSize;
+        DisplayPCoins();
     }
     public void HighlightButton(){
+        
+        
         HighlightTiles();
+        DisplayPCoins();
+
     }
     
     void DeleteTiles(){
@@ -223,7 +233,7 @@ public class SlotManagerV2 : MonoBehaviour
                     if(slotScreen[i][c].tileCounted){
                         Destroy(slotScreen[i][c].slotGameObject);
                         slotScreen[i].RemoveAt(c);
-                        Debug.Log(slotScreen[i].Count);
+                        //Debug.Log(slotScreen[i].Count);
                         //slotClassObj objTest;
                         //objTest = new slotClassObj(Instantiate(slotObjPrefab));
                         //slotScreen[i].Add(objTest);
@@ -282,5 +292,65 @@ public class SlotManagerV2 : MonoBehaviour
             }
     }
     
+
+
+
+
+[SerializeField] int playerCoins = 100;
+[SerializeField] int betSize = 10; 
+
+[SerializeField] Text playersCoinText;
+
+void DisplayPCoins(){
+    Debug.Log("players coins: " + playerCoins);
+    playersCoinText.text = "players coins: " + playerCoins.ToString();
+}
+
+void AddCoins (int clusterSize){
+    switch(clusterSize){
+
+        case 5:
+        case 6:
+            playerCoins += betSize/10;
+            break;
+        case 7:
+        case 8:
+            playerCoins += betSize/5;
+            break;
+        case 9:
+        case 10:
+            playerCoins += betSize/2;
+            break;
+        case 11:
+        case 12:
+            playerCoins += betSize *1;
+            break;
+        case 13:
+        case 14:
+            playerCoins += (betSize *1 + betSize /2);
+            break;
+        case 15:
+        case 16:
+            playerCoins += betSize *2;
+            break;
+        default:
+            if(clusterSize > 16){
+                playerCoins += betSize *5;
+            }else{
+                Debug.Log("Cluster size is not big enough");
+            }
+            break;
+    }
+}
+
+
+
+
+
+
+
+
+
+
 
 }
