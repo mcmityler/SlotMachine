@@ -56,6 +56,7 @@ public class SlotManagerV2 : MonoBehaviour
                 slotScreen[i][c].slotGameObject.name = (i.ToString()+c.ToString());
                 //randomize what type of tile it is. 
                 randomizeGameobjects(i,c);
+                //slotScreen[i][c].slotGameObject.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezePositionY;
             }
         }
     }
@@ -271,9 +272,19 @@ public class SlotManagerV2 : MonoBehaviour
             {
                 for (int c = 0; c < slotScreen[i].Count; c++)
                 {
-                    if(slotScreen[i][c].slotGameObject.transform.position.y >= (c-4.0f)){
-                        slotScreen[i][c].slotGameObject.transform.position =  slotScreen[i][c].slotGameObject.transform.position  + new Vector3(0,-slotMoveSpeed,0) * Time.deltaTime;
+                    if(slotScreen[i][c].slotGameObject.transform.position.y > (c-3.95f)){
+                        //slotScreen[i][c].slotGameObject.transform.position =  slotScreen[i][c].slotGameObject.transform.position  + new Vector3(0,-slotMoveSpeed,0) * Time.deltaTime;
+                        slotScreen[i][c].slotGameObject.transform.position = Vector3.Lerp(slotScreen[i][c].slotGameObject.transform.position, new Vector3(slotScreen[i][c].slotGameObject.transform.position.x,c-4.0f,slotScreen[i][c].slotGameObject.transform.position.z), Time.deltaTime * slotMoveSpeed);
                         didMove = true;
+                    }else if (slotScreen[i][c].slotGameObject.transform.position.y != (c-4.0f)){
+                        Debug.Log("hi");
+                        
+                            slotScreen[i][c].slotGameObject.transform.position = new Vector3(slotScreen[i][c].slotGameObject.transform.position.x,c-4.0f,slotScreen[i][c].slotGameObject.transform.position.z) ;
+                            //slotScreen[i][c].slotGameObject.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeAll;
+                        
+                    }else {
+                        Debug.Log("nothing");
+                        
                     }
                 }
             } 
@@ -302,7 +313,7 @@ public class SlotManagerV2 : MonoBehaviour
 [SerializeField] Text playersCoinText;
 
 void DisplayPCoins(){
-    Debug.Log("players coins: " + playerCoins);
+    //Debug.Log("players coins: " + playerCoins);
     playersCoinText.text = "players coins: " + playerCoins.ToString();
 }
 
