@@ -3,13 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-/*To do List
-1. spawn 8x8 grid of random symbols -- DONZO :) --
-2. Detect bunches of symbols
-3. Delete old symbols + keep track some how
-4. Add new symbols + fall down..
-*/
-
 public class SlotManagerV2 : MonoBehaviour
 {
     // --------------------------- CLASSES ---------------------------------
@@ -36,6 +29,10 @@ public class SlotManagerV2 : MonoBehaviour
     private int tileCount = 0;
     private bool droppingTiles = false;
     [SerializeField] private int slotMoveSpeed = 6; //movementspeed of the slot
+    
+    bool startGame = false;
+    bool gameRunning = false;
+    int coinTotal = 0;
 
     // --------------------------- FUNCTIONS ---------------------------------
     void Awake(){
@@ -61,10 +58,54 @@ public class SlotManagerV2 : MonoBehaviour
         }
     }
     void FixedUpdate(){
-       
+        
+        //GAME LOOP
+        if(startGame){
+            gameRunning = true;
+        }
+        if(gameRunning){
+            GameLoop();
+        }
+        else if (!gameRunning && coinTotal > 0){
+            Debug.Log ("Round Over, you won " + coinTotal + " coins" );
+            coinTotal = 0;
+        }
+
+
        if(droppingTiles == true){
            DropDownTiles();
        }
+    }
+    float gameloopCtr = 0;
+    float gameloopCtr2 = 0;
+    bool tileHighlighted = false;
+    [SerializeField] float timeB4Delete = 1;
+    void GameLoop(){
+        if(startGame){
+            startGame = false;
+            RandomizeButton();
+            DropButton();
+        }
+        else if(gameloopCtr >= timeB4Delete){
+            gameloopCtr = 0;
+            DeleteButton();
+            DropButton();
+        }
+        else if(gameloopCtr2 >= timeB4Delete + 1){
+            gameloopCtr2 = 0;
+            AddButton();
+            DropButton();
+            tileHighlighted = false;
+        }
+        else if(!droppingTiles){
+            if(!tileHighlighted){
+                HighlightButton();
+                tileHighlighted = true;
+            }
+            gameloopCtr += Time.deltaTime;
+            gameloopCtr2 += Time.deltaTime;
+        }
+        
     }
    
     void randomizeGameobjects(int i, int c){ //Randomize tiles (pass current tile pos that you want to randomize!)
@@ -105,7 +146,7 @@ public class SlotManagerV2 : MonoBehaviour
 
     //Find what tiles are in clusters of 5+ and then highlight them 
     public void HighlightTiles(){
-        
+            bool clusterExists = false;
             //Rotate through 8x8 grid.
             for (int i = 0; i < 8; i++)
             {
@@ -121,11 +162,18 @@ public class SlotManagerV2 : MonoBehaviour
                     //Check if big enough cluster!
                     //if there was enough tiles in that cluster... re-cycle through those tiles and collect(highlight) them.
                     if(tileCount >=  5){
+                        clusterExists = true;
+                        Debug.Log(clusterExists);
                         //Highlight the tiles that are in a large enough cluster + tag them special.
                         changeTiles(i,c, slotScreen[i][c].slotImageTag);
-                        AddCoins(tileCount);
+                        AddCoins(tileCount, slotScreen[i][c].slotImageTag);
                     }
                 }
+            }
+            Debug.Log(clusterExists);
+            if(!clusterExists){
+                gameRunning = false;
+                
             }
     }
     void checkTile(int i, int c, string lookingFor){
@@ -207,7 +255,7 @@ public class SlotManagerV2 : MonoBehaviour
     public void DropButton(){
         droppingTiles = true;
     }
-     public void RanzomizeButton(){
+     public void RandomizeButton(){
         RandomizeAll();
         playerCoins -= betSize;
         DisplayPCoins();
@@ -218,6 +266,11 @@ public class SlotManagerV2 : MonoBehaviour
         HighlightTiles();
         DisplayPCoins();
 
+    }
+    public void StartButton(){
+        if(!gameRunning){
+            startGame = true;
+        }
     }
     
     void DeleteTiles(){
@@ -265,32 +318,62 @@ public class SlotManagerV2 : MonoBehaviour
         
     }
 //new Vector3(i - 2,c-4,0);
+    int droppingCol = 0;
     void DropDownTiles(){
-        bool didMove = false;
-            //Rotate through 8x8 grid.
-            for (int i = 0; i < 8; i++)
-            {
-                for (int c = 0; c < slotScreen[i].Count; c++)
+        if (fastPlay){ //If you want all grids to drop at the same time!
+            bool didMove = false;
+           
+                //Rotate through 8x8 grid.
+                for (int i = 0; i < 8; i++)
                 {
-                    if(slotScreen[i][c].slotGameObject.transform.position.y > (c-3.95f)){
-                        //slotScreen[i][c].slotGameObject.transform.position =  slotScreen[i][c].slotGameObject.transform.position  + new Vector3(0,-slotMoveSpeed,0) * Time.deltaTime;
-                        slotScreen[i][c].slotGameObject.transform.position = Vector3.Lerp(slotScreen[i][c].slotGameObject.transform.position, new Vector3(slotScreen[i][c].slotGameObject.transform.position.x,c-4.0f,slotScreen[i][c].slotGameObject.transform.position.z), Time.deltaTime * slotMoveSpeed);
-                        didMove = true;
-                    }else if (slotScreen[i][c].slotGameObject.transform.position.y != (c-4.0f)){
-                        Debug.Log("hi");
-                        
-                            slotScreen[i][c].slotGameObject.transform.position = new Vector3(slotScreen[i][c].slotGameObject.transform.position.x,c-4.0f,slotScreen[i][c].slotGameObject.transform.position.z) ;
-                            //slotScreen[i][c].slotGameObject.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeAll;
-                        
-                    }else {
-                        Debug.Log("nothing");
-                        
+                    for (int c = 0; c < slotScreen[i].Count; c++)
+                    {
+                        if(slotScreen[i][c].slotGameObject.transform.position.y > (c-(4.0f - tilePosSnap))){ //check if game object is above where you want it to snap from.
+                            //slotScreen[i][c].slotGameObject.transform.position =  slotScreen[i][c].slotGameObject.transform.position  + new Vector3(0,-slotMoveSpeed,0) * Time.deltaTime;
+                            slotScreen[i][c].slotGameObject.transform.position = Vector3.Lerp(slotScreen[i][c].slotGameObject.transform.position, new Vector3(slotScreen[i][c].slotGameObject.transform.position.x,c-4.0f,slotScreen[i][c].slotGameObject.transform.position.z), Time.deltaTime * slotMoveSpeed);
+                            didMove = true;
+                        }else if (slotScreen[i][c].slotGameObject.transform.position.y != (c-4.0f)){ //check if tile is on the exact position you want
+                            //Snap gameobject to correct position
+                            slotScreen[i][c].slotGameObject.transform.position = new Vector3(slotScreen[i][c].slotGameObject.transform.position.x,c-4.0f,slotScreen[i][c].slotGameObject.transform.position.z);
+                        }
                     }
-                }
-            } 
+                } 
+            
+            
             if(didMove == false){
                 droppingTiles = false;
             }
+        }
+        if(!fastPlay){
+            bool didMove = true;
+            bool colComplete = true;
+            for (int i = 0; i < slotScreen[droppingCol].Count; i++)
+            {
+                if(slotScreen[droppingCol][i].slotGameObject.transform.position.y > (i-(3.0f))){ //check if game object is above where you want it to snap from.
+                    
+                    slotScreen[droppingCol][i].slotGameObject.transform.position = Vector3.Lerp(slotScreen[droppingCol][i].slotGameObject.transform.position, new Vector3(slotScreen[droppingCol][i].slotGameObject.transform.position.x,i-4.0f,slotScreen[droppingCol][i].slotGameObject.transform.position.z), Time.deltaTime * slotMoveSpeed);
+                    colComplete = false;
+                }else if (slotScreen[droppingCol][i].slotGameObject.transform.position.y > (i-(4.0f - tilePosSnap))){ //check if tile is on the exact position you want
+                    slotScreen[droppingCol][i].slotGameObject.transform.position = Vector3.Lerp(slotScreen[droppingCol][i].slotGameObject.transform.position, new Vector3(slotScreen[droppingCol][i].slotGameObject.transform.position.x,i-4.0f,slotScreen[droppingCol][i].slotGameObject.transform.position.z), Time.deltaTime * slotMoveSpeed * 2);
+                    colComplete = false;
+                }
+                else if (slotScreen[droppingCol][i].slotGameObject.transform.position.y != (i-4.0f)){ //check if tile is on the exact position you want
+                    //Snap gameobject to correct position
+                    slotScreen[droppingCol][i].slotGameObject.transform.position = new Vector3(slotScreen[droppingCol][i].slotGameObject.transform.position.x,i-4.0f,slotScreen[droppingCol][i].slotGameObject.transform.position.z);
+                    
+                }
+            }
+            if(colComplete){
+                droppingCol ++;
+                if(droppingCol >= slotScreen.Count){
+                    didMove = false;
+                }
+            }
+            if(didMove == false){
+                droppingTiles = false;
+                droppingCol = 0;
+            }
+        }
     }
 
     void RandomizeAll(){
@@ -298,6 +381,7 @@ public class SlotManagerV2 : MonoBehaviour
             {
                 for (int c = 0; c < slotScreen[i].Count; c++)
                 {
+                    slotScreen[i][c].slotGameObject.transform.position = new Vector3(i - 2,c+5,0);
                     randomizeGameobjects(i,c);
                 }
             }
@@ -312,46 +396,61 @@ public class SlotManagerV2 : MonoBehaviour
 
 [SerializeField] Text playersCoinText;
 
+[SerializeField] float tilePosSnap = 0.05f;
+
+ int tilePremium = 1; //How much more money does the tile give you per cluster
+ [SerializeField] bool fastPlay = true; // fast play meaning tiles drop all at once!
 void DisplayPCoins(){
     //Debug.Log("players coins: " + playerCoins);
     playersCoinText.text = "players coins: " + playerCoins.ToString();
 }
 
-void AddCoins (int clusterSize){
+void AddCoins (int clusterSize, string objType){
+    //Set tile premium cost (how much each cluster is worth).
+     if(objType == "club" ||objType == "spade"||objType == "heart"||objType == "diamond"){
+         tilePremium = 1;
+     }
+
+    int profit = 0;
+     //Evaluate cluster size and add to players coins.
     switch(clusterSize){
 
         case 5:
         case 6:
-            playerCoins += betSize/10;
+                profit = betSize/10 * tilePremium;
             break;
         case 7:
         case 8:
-            playerCoins += betSize/5;
+            profit = betSize/5* tilePremium;
             break;
         case 9:
         case 10:
-            playerCoins += betSize/2;
+            profit = betSize/2* tilePremium;
             break;
         case 11:
         case 12:
-            playerCoins += betSize *1;
+            profit = betSize *1* tilePremium;
             break;
         case 13:
         case 14:
-            playerCoins += (betSize *1 + betSize /2);
+            profit = (betSize *1 + betSize /2)* tilePremium;
             break;
         case 15:
         case 16:
-            playerCoins += betSize *2;
+            profit = betSize *2* tilePremium;
             break;
         default:
             if(clusterSize > 16){
-                playerCoins += betSize *5;
+                profit = betSize *5 * tilePremium;
             }else{
                 Debug.Log("Cluster size is not big enough");
             }
             break;
+
     }
+    Debug.Log("profit is: " + profit);
+    playerCoins += profit;
+    coinTotal += profit;
 }
 
 
