@@ -25,14 +25,30 @@ public class SlotManagerV2 : MonoBehaviour
     [Header("the images below must be in the same order as the randomizer")]
     public Sprite[] slotImages;//tile images (passed by inspector)
     List<List<slotClassObj>> slotScreen = new List<List<slotClassObj>>(); //creation of 2D list.
+    private int clusterSizeCount = 0; //Holds the value of how big a cluster is.
+    [SerializeField] private bool fastPlay = true; // fast play meaning tiles drop all at once!
 
-    private int tileCount = 0;
-    private bool droppingTiles = false;
-    [SerializeField] private int slotMoveSpeed = 6; //movementspeed of the slot
+    //DROPPING VARIABLES
+    private bool droppingTiles = false; // Are you currently dropping tiles on the screen
+    [SerializeField] private int slotMoveSpeed = 6; //Movement speed of the tiles when LERP
+    private int droppingCol = 0; //what is the current column that is dropping
+    [SerializeField] private float tilePosSnap = 0.05f; //How close to drop objects before it snaps to position.
     
-    bool startGame = false;
-    bool gameRunning = false;
-    int coinTotal = 0;
+    //GAME LOOP VARIABLES
+    private bool startGame = false; //Has the game started
+    private bool gameRunning = false;//Is the game already running
+    private float deleteCTR = 0; //Gameloop counter for how long to wait before deleting tiles after highlight 
+    private float addCTR = 0;//Gameloop counter for how long to wait before adding and dropping new tiles after deleted.
+    private bool tileHighlighted = false; //In the gameloop has it already highlighted the tiles?
+    [SerializeField] private float timeB4Delete = 1; //How long should the game wait b/w  highlighting and deleting objects
+
+    //COIN VARIABLES
+    [SerializeField] private int playerCoins = 100; //How many coins the player has in total
+    [SerializeField] private int betSize = 10; //How much the player is spending per bet
+    [SerializeField] private Text playersCoinText; //reference to the text object to display players coins.
+    private int tilePremium = 1; //How much more money does the tile give you per cluster
+    private int coinTotal = 0; //How many coins did the player earn that round
+
 
     // --------------------------- FUNCTIONS ---------------------------------
     void Awake(){
@@ -71,39 +87,40 @@ public class SlotManagerV2 : MonoBehaviour
             coinTotal = 0;
         }
 
-
+        //dropping tiles.
        if(droppingTiles == true){
            DropDownTiles();
        }
     }
-    float gameloopCtr = 0;
-    float gameloopCtr2 = 0;
-    bool tileHighlighted = false;
-    [SerializeField] float timeB4Delete = 1;
+
+    //GAME LOOP
     void GameLoop(){
-        if(startGame){
-            startGame = false;
-            RandomizeButton();
-            DropButton();
+        if(startGame){ //did you press the start button 
+            startGame = false; 
+            RandomizeButton(); //randomize + reset position of tiles
+            DropButton(); //Drop tiles from top of screen down.
         }
-        else if(gameloopCtr >= timeB4Delete){
-            gameloopCtr = 0;
-            DeleteButton();
-            DropButton();
+        else if(deleteCTR >= timeB4Delete){ //has enough time passed after highlighting to delete tiles.
+            deleteCTR = 0; //reset counter
+            DeleteButton(); //delete tiles
+            DropButton(); //drop tiles that are floating (needs timer between)
         }
-        else if(gameloopCtr2 >= timeB4Delete + 1){
-            gameloopCtr2 = 0;
+        else if(addCTR >= timeB4Delete + 1){//has enough time passed after highlighting to add + drop tiles.
+            addCTR = 0;
             AddButton();
             DropButton();
-            tileHighlighted = false;
+            tileHighlighted = false; //make it so it can highlight tiles again
         }
-        else if(!droppingTiles){
-            if(!tileHighlighted){
+        else if(!droppingTiles){ //if you arent dropping tiles
+            if(!tileHighlighted){ //highlight if you havent
                 HighlightButton();
                 tileHighlighted = true;
+                deleteCTR = 0;
+                addCTR = 0;
             }
-            gameloopCtr += Time.deltaTime;
-            gameloopCtr2 += Time.deltaTime;
+            //add to counters!
+            deleteCTR += Time.deltaTime;
+            addCTR += Time.deltaTime;
         }
         
     }
@@ -153,7 +170,7 @@ public class SlotManagerV2 : MonoBehaviour
                 for (int c = 0; c < 8; c++)
                 {
                     //holds count of how many tiles within cluster, resets to 0 when new item.
-                    tileCount = 0; 
+                    clusterSizeCount = 0; 
                     
                     //Make sure tile hasnt already been in another cluster!
                     if(!slotScreen[i][c].tileChecked){
@@ -161,16 +178,17 @@ public class SlotManagerV2 : MonoBehaviour
                     }
                     //Check if big enough cluster!
                     //if there was enough tiles in that cluster... re-cycle through those tiles and collect(highlight) them.
-                    if(tileCount >=  5){
+                    if(clusterSizeCount >=  5){
                         clusterExists = true;
                         Debug.Log(clusterExists);
                         //Highlight the tiles that are in a large enough cluster + tag them special.
                         changeTiles(i,c, slotScreen[i][c].slotImageTag);
-                        AddCoins(tileCount, slotScreen[i][c].slotImageTag);
+                        AddCoins(clusterSizeCount, slotScreen[i][c].slotImageTag);
                     }
                 }
             }
             Debug.Log(clusterExists);
+            //if no clusters exist end game
             if(!clusterExists){
                 gameRunning = false;
                 
@@ -180,7 +198,7 @@ public class SlotManagerV2 : MonoBehaviour
         //I am done checking the tile im on.
         slotScreen[i][c].tileChecked = true;
         //Found another one of these tiles.
-        tileCount ++;
+        clusterSizeCount ++;
         //check that you arent going out of bounds
         if(i > 0){
             //Check if there is the same string to the left.
@@ -245,7 +263,7 @@ public class SlotManagerV2 : MonoBehaviour
         }
         
     }
-
+     // ------------------------- BUTTONS ----------------------------
     public void DeleteButton(){
         DeleteTiles();
     }
@@ -272,7 +290,7 @@ public class SlotManagerV2 : MonoBehaviour
             startGame = true;
         }
     }
-    
+
     void DeleteTiles(){
         int destroying = 0;
         while(destroying < 9){
@@ -287,15 +305,7 @@ public class SlotManagerV2 : MonoBehaviour
                     if(slotScreen[i][c].tileCounted){
                         Destroy(slotScreen[i][c].slotGameObject);
                         slotScreen[i].RemoveAt(c);
-                        //Debug.Log(slotScreen[i].Count);
-                        //slotClassObj objTest;
-                        //objTest = new slotClassObj(Instantiate(slotObjPrefab));
-                        //slotScreen[i].Add(objTest);
-                        //randomizeGameobjects(i,c);
-                        //slotScreen[i][slotScreen[i].Count-1].slotGameObject.transform.position = new Vector3(i - 2,slotScreen[i].Count-1 + 5,0);
                         break;
-                        
-                        
                     }
             }
         }
@@ -317,8 +327,6 @@ public class SlotManagerV2 : MonoBehaviour
         }
         
     }
-//new Vector3(i - 2,c-4,0);
-    int droppingCol = 0;
     void DropDownTiles(){
         if (fastPlay){ //If you want all grids to drop at the same time!
             bool didMove = false;
@@ -390,16 +398,6 @@ public class SlotManagerV2 : MonoBehaviour
 
 
 
-
-[SerializeField] int playerCoins = 100;
-[SerializeField] int betSize = 10; 
-
-[SerializeField] Text playersCoinText;
-
-[SerializeField] float tilePosSnap = 0.05f;
-
- int tilePremium = 1; //How much more money does the tile give you per cluster
- [SerializeField] bool fastPlay = true; // fast play meaning tiles drop all at once!
 void DisplayPCoins(){
     //Debug.Log("players coins: " + playerCoins);
     playersCoinText.text = "players coins: " + playerCoins.ToString();

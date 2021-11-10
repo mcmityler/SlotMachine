@@ -1139,7 +1139,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Ranzomize
+  m_Text: Randomize
 --- !u!222 &1069651703
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1664,13 +1664,13 @@ MonoBehaviour:
   - {fileID: 21300000, guid: de487bc588f60624a890186eb84a5dc5, type: 3}
   - {fileID: 21300000, guid: 01d20edd797d3df469da45150d221ee7, type: 3}
   - {fileID: 21300000, guid: 4171fe6d5c98f5d499032372e38f70f4, type: 3}
+  fastPlay: 0
   slotMoveSpeed: 5
-  timeB4Delete: 3
+  tilePosSnap: 0.05
+  timeB4Delete: 1.5
   playerCoins: 100
   betSize: 10
   playersCoinText: {fileID: 755644654}
-  tilePosSnap: 0.05
-  fastPlay: 0
 --- !u!4 &1707136179
 Transform:
   m_ObjectHideFlags: 0
