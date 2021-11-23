@@ -48,11 +48,15 @@ public class SlotManagerV2 : MonoBehaviour
     [SerializeField] private Text playersCoinText; //reference to the text object to display players coins.
     private int tilePremium = 1; //How much more money does the tile give you per cluster
     private int coinTotal = 0; //How many coins did the player earn that round
+    private bool displayCoinTotal = false; //Round is over.. Display Coins.
+    [SerializeField] private Text betSizeTextbox; //displays the betsize to player
+    private int betSizeScale = 4;//bet size scale (so its not just +1 every time you hit the button)
 
 
     // --------------------------- FUNCTIONS ---------------------------------
     void Awake(){
         DisplayPCoins();
+        changeBetSize();
         //create 8x8 grid
         for (int i = 0; i < 8; i++)
         {
@@ -76,15 +80,26 @@ public class SlotManagerV2 : MonoBehaviour
     void FixedUpdate(){
         
         //GAME LOOP
-        if(startGame){
+        if(startGame && playerCoins >= betSize){ //check that you have enough coins to play game
+            playerCoins -= betSize;
+            DisplayPCoins();
             gameRunning = true;
+        }
+        else if (playerCoins < betSize){ //if not enough coins then dont start.
+            startGame = false;
         }
         if(gameRunning){
             GameLoop();
+            displayCoinTotal = true;
         }
-        else if (!gameRunning && coinTotal > 0){
-            Debug.Log ("Round Over, you won " + coinTotal + " coins" );
+        else if (!gameRunning && displayCoinTotal){
+            if(betSizeScale == 0){
+                Debug.Log ("this is free play" );
+            }else{
+                Debug.Log ("Round Over, you won " + coinTotal + " coins" );
+            }
             coinTotal = 0;
+            displayCoinTotal = false;
         }
 
         //dropping tiles.
@@ -275,8 +290,6 @@ public class SlotManagerV2 : MonoBehaviour
     }
      public void RandomizeButton(){
         RandomizeAll();
-        playerCoins -= betSize;
-        DisplayPCoins();
     }
     public void HighlightButton(){
         
@@ -288,6 +301,56 @@ public class SlotManagerV2 : MonoBehaviour
     public void StartButton(){
         if(!gameRunning){
             startGame = true;
+        }
+    }
+    public void IncreaseBetButton(){ // increase bet size
+        if(betSizeScale < 8){
+            betSizeScale ++;
+        }
+        changeBetSize();
+    }
+    public void DecreaseBetButton(){ //decrease bet size
+        if(betSizeScale > 0){
+           betSizeScale --;
+        }
+        changeBetSize();
+    }
+    void changeBetSize(){
+        //change bet size
+        switch(betSizeScale){
+            case 0:
+                betSize = 0;
+                break;
+            case 1:
+                betSize = 1;
+                break;
+            case 2:
+                betSize = 2;
+                break;
+            case 3:
+                betSize = 5;
+                break;
+            case 4:
+                betSize = 10;
+                break;
+            case 5:
+                betSize = 20;
+                break;
+            case 6:
+                betSize = 30;
+                break;
+            case 7:
+                betSize = 40;
+                break;
+            case 8:
+                betSize = 50;
+                break;
+        }
+        //display bet size or free play
+        if(betSizeScale > 0){
+            betSizeTextbox.text = betSize.ToString();
+        }else{
+            betSizeTextbox.text = "free play";
         }
     }
 
