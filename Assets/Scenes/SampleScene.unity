@@ -2253,7 +2253,7 @@ MonoBehaviour:
   fastPlay: 0
   slotMoveSpeed: 5
   tilePosSnap: 0.05
-  timeB4Delete: 1.5
+  timeB4Delete: 0.3
   playerCoins: 100
   betSize: 10
   playersCoinText: {fileID: 755644654}
